@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Time Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-card: #1a1a24;
+      --bg-card-hover: #22222e;
+      --border: #2a2a3a;
+      --text-primary: #f0f0f5;
+      --text-secondary: #8888a0;
+      --text-muted: #5a5a70;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.disconnected {
+      background: var(--danger);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .config-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .config-panel.hidden { display: none; }
+
+    .config-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-group label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .input-group input {
+      padding: 0.75rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5558e3;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      align-items: center;
+    }
+
+    .select-wrapper select {
+      appearance: none;
+      padding: 0.75rem 2.5rem 0.75rem 1rem;
+      background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a5a70' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 1rem center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    .select-wrapper select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .stat-value .unit {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-left: 0.25rem;
+    }
+
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 400px;
+    }
+
+    .route-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+    }
+
+    .legend-item:hover { background: var(--bg-secondary); }
+    .legend-item.inactive { opacity: 0.4; }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 1rem 1.5rem;
+      text-align: left;
+    }
+
+    .data-table th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      background: var(--bg-secondary);
+    }
+
+    .data-table td {
+      border-top: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .data-table tr:hover td { background: var(--bg-card-hover); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    .traffic-badge {
+      display: inline-flex;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .traffic-badge.normal { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .traffic-badge.slow { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .traffic-badge.jam { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .header-content { flex-direction: column; align-items: flex-start; }
+      .main { padding: 1rem; }
+      .chart-wrapper { height: 300px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">🚗</div>
+        <span class="logo-text">Travel Time Dashboard</span>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot disconnected" id="statusDot"></span>
+        <span id="statusText">Not connected</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="config-panel" id="configPanel">
+      <h2 class="config-title">⚙️ Connect to Supabase</h2>
+      <div class="config-grid">
+        <div class="input-group">
+          <label for="supabaseUrl">Supabase URL</label>
+          <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+        </div>
+        <div class="input-group">
+          <label for="supabaseKey">Anon Key</label>
+          <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIs...">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="connectBtn">Connect & Load Data</button>
+      <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted);">
+        Find these in your Supabase Dashboard → Settings → API
+      </p>
+    </div>
+
+    <div id="dashboardContent" style="display: none;">
+      <div class="controls">
+        <div class="select-wrapper">
+          <select id="routeSelect"><option value="all">All Routes</option></select>
+        </div>
+        <div class="select-wrapper">
+          <select id="timeRange">
+            <option value="24h">Last 24 Hours</option>
+            <option value="7d" selected>Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary" id="refreshBtn">↻ Refresh</button>
+        <button class="btn btn-secondary" id="disconnectBtn">Disconnect</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Current Avg Time</div>
+          <div class="stat-value" id="statCurrent">--<span class="unit">min</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Min Travel Time</div>
+          <div class="stat-value" id="statMin">--<span class="unit">min</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Max Travel Time</div>
+          <div class="stat-value" id="statMax">--<span class="unit">min</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Data Points</div>
+          <div class="stat-value" id="statCount">--</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Travel Time Over Time</h3>
+        <div class="chart-wrapper">
+          <canvas id="travelTimeChart"></canvas>
+        </div>
+        <div class="route-legend" id="routeLegend"></div>
+      </div>
+
+      <div class="table-container">
+        <div class="table-header">
+          <h3 class="table-title">Recent Readings</h3>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Route</th>
+              <th>Duration</th>
+              <th>With Traffic</th>
+              <th>Distance</th>
+              <th>Conditions</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody">
+            <tr><td colspan="6" class="empty-state">No data loaded</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // State
+    let config = { url: '', key: '' };
+    let routes = [];
+    let travelTimes = [];
+    let chart = null;
+    const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#14b8a6', '#f97316'];
+
+    const $ = (id) => document.getElementById(id);
+
+    // Supabase REST query using fetch
+    async function query(table, params = {}) {
+      const url = new URL(config.url + '/rest/v1/' + table);
+      for (const [k, v] of Object.entries(params)) {
+        if (v != null) url.searchParams.append(k, v);
+      }
+
+      const res = await fetch(url.toString(), {
+        headers: {
+          'apikey': config.key,
+          'Authorization': 'Bearer ' + config.key,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || err.hint || 'HTTP ' + res.status);
+      }
+      return res.json();
+    }
+
+    // Connect
+    async function connect() {
+      const url = $('supabaseUrl').value.trim().replace(/\/$/, '');
+      const key = $('supabaseKey').value.trim();
+
+      if (!url || !key) return alert('Please enter both URL and Key');
+
+      config = { url, key };
+
+      try {
+        await query('routes', { limit: 1 });
+        localStorage.setItem('supabaseUrl', url);
+        localStorage.setItem('supabaseKey', key);
+
+        $('statusDot').classList.remove('disconnected');
+        $('statusText').textContent = 'Connected';
+        $('configPanel').classList.add('hidden');
+        $('dashboardContent').style.display = 'block';
+
+        await loadData();
+      } catch (e) {
+        console.error(e);
+        alert('Connection failed: ' + e.message);
+      }
+    }
+
+    function disconnect() {
+      localStorage.removeItem('supabaseUrl');
+      localStorage.removeItem('supabaseKey');
+      config = { url: '', key: '' };
+      routes = [];
+      travelTimes = [];
+
+      $('statusDot').classList.add('disconnected');
+      $('statusText').textContent = 'Not connected';
+      $('configPanel').classList.remove('hidden');
+      $('dashboardContent').style.display = 'none';
+
+      if (chart) { chart.destroy(); chart = null; }
+    }
+
+    async function loadData() {
+      await loadRoutes();
+      await loadTravelTimes();
+      updateDashboard();
+    }
+
+    async function loadRoutes() {
+      try {
+        routes = await query('routes', { is_active: 'eq.true', order: 'name.asc' });
+        const sel = $('routeSelect');
+        sel.innerHTML = '<option value="all">All Routes</option>';
+        routes.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = r.name;
+          sel.appendChild(opt);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadTravelTimes() {
+      try {
+        const range = $('timeRange').value;
+        const now = Date.now();
+        let start = null;
+        if (range === '24h') start = new Date(now - 86400000);
+        else if (range === '7d') start = new Date(now - 604800000);
+        else if (range === '30d') start = new Date(now - 2592000000);
+
+        const params = { select: '*', order: 'checked_at.asc' };
+        if (start) params.checked_at = 'gte.' + start.toISOString();
+
+        const data = await query('travel_times', params);
+        travelTimes = data.map(t => ({ ...t, route: routes.find(r => r.id === t.route_id) }));
+      } catch (e) { console.error(e); }
+    }
+
+    function updateDashboard() {
+      const sel = $('routeSelect').value;
+      const data = sel === 'all' ? travelTimes : travelTimes.filter(t => t.route_id === sel);
+      updateStats(data);
+      updateChart(data);
+      updateTable(data);
+    }
+
+    function updateStats(data) {
+      if (!data.length) {
+        $('statCurrent').innerHTML = '--<span class="unit">min</span>';
+        $('statMin').innerHTML = '--<span class="unit">min</span>';
+        $('statMax').innerHTML = '--<span class="unit">min</span>';
+        $('statCount').textContent = '0';
+        return;
+      }
+      const dur = data.map(d => d.duration_in_traffic_seconds || d.duration_seconds);
+      $('statCurrent').innerHTML = Math.round(dur[dur.length - 1] / 60) + '<span class="unit">min</span>';
+      $('statMin').innerHTML = Math.round(Math.min(...dur) / 60) + '<span class="unit">min</span>';
+      $('statMax').innerHTML = Math.round(Math.max(...dur) / 60) + '<span class="unit">min</span>';
+      $('statCount').textContent = data.length.toLocaleString();
+    }
+
+    function updateChart(data) {
+      if (chart) chart.destroy();
+
+      const byRoute = {};
+      data.forEach(d => {
+        const id = d.route_id, name = d.route?.name || 'Unknown';
+        if (!byRoute[id]) byRoute[id] = { name, points: [] };
+        byRoute[id].points.push({
+          x: new Date(d.checked_at),
+          y: Math.round((d.duration_in_traffic_seconds || d.duration_seconds) / 60)
+        });
+      });
+
+      const datasets = Object.entries(byRoute).map(([_, r], i) => ({
+        label: r.name,
+        data: r.points,
+        borderColor: colors[i % colors.length],
+        backgroundColor: colors[i % colors.length] + '20',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 2,
+        borderWidth: 2
+      }));
+
+      chart = new Chart($('travelTimeChart').getContext('2d'), {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1a1a24',
+              borderColor: '#2a2a3a',
+              borderWidth: 1,
+              titleColor: '#f0f0f5',
+              bodyColor: '#8888a0',
+              padding: 12,
+              callbacks: {
+                title: items => new Date(items[0].parsed.x).toLocaleString(),
+                label: item => item.dataset.label + ': ' + item.parsed.y + ' min'
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: { displayFormats: { hour: 'MMM d, HH:mm', day: 'MMM d' } },
+              grid: { color: '#2a2a3a' },
+              ticks: { color: '#5a5a70' }
+            },
+            y: {
+              beginAtZero: false,
+              grid: { color: '#2a2a3a' },
+              ticks: { color: '#5a5a70', callback: v => v + ' min' }
+            }
+          }
+        }
+      });
+
+      $('routeLegend').innerHTML = datasets.map((ds, i) =>
+        '<div class="legend-item" data-i="' + i + '"><span class="legend-dot" style="background:' + ds.borderColor + '"></span><span>' + ds.label + '</span></div>'
+      ).join('');
+    }
+
+    function toggleDataset(i) {
+      if (!chart) return;
+      const meta = chart.getDatasetMeta(i);
+      meta.hidden = !meta.hidden;
+      chart.update();
+      const el = document.querySelector('.legend-item[data-i="' + i + '"]');
+      if (el) el.classList.toggle('inactive', meta.hidden);
+    }
+
+    function updateTable(data) {
+      const tbody = $('dataTableBody');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No data available</td></tr>';
+        return;
+      }
+      const recent = data.slice().reverse().slice(0, 50);
+      tbody.innerHTML = recent.map(d => {
+        const time = new Date(d.checked_at).toLocaleString();
+        const dur = Math.round(d.duration_seconds / 60);
+        const traffic = d.duration_in_traffic_seconds ? Math.round(d.duration_in_traffic_seconds / 60) + ' min' : '--';
+        const dist = d.distance_meters ? (d.distance_meters / 1000).toFixed(1) + ' km' : '--';
+        const cond = d.traffic_condition || 'NORMAL';
+        const cls = cond.includes('JAM') ? 'jam' : cond === 'SLOW' ? 'slow' : 'normal';
+        const label = { NORMAL: '✓ Normal', SLOW: '⚠ Slow', TRAFFIC_JAM: '✕ Jam' }[cond] || cond;
+        return '<tr><td class="mono">' + time + '</td><td>' + (d.route?.name || 'Unknown') + '</td><td class="mono">' + dur + ' min</td><td class="mono">' + traffic + '</td><td class="mono">' + dist + '</td><td><span class="traffic-badge ' + cls + '">' + label + '</span></td></tr>';
+      }).join('');
+    }
+
+    // Event listeners
+    $('connectBtn').onclick = connect;
+    $('disconnectBtn').onclick = disconnect;
+    $('refreshBtn').onclick = async () => { await loadTravelTimes(); updateDashboard(); };
+    $('routeSelect').onchange = updateDashboard;
+    $('timeRange').onchange = async () => { await loadTravelTimes(); updateDashboard(); };
+    $('routeLegend').onclick = e => {
+      const item = e.target.closest('.legend-item');
+      if (item) toggleDataset(parseInt(item.dataset.i));
+    };
+
+    // Auto-connect on load
+    const savedUrl = localStorage.getItem('supabaseUrl');
+    const savedKey = localStorage.getItem('supabaseKey');
+    if (savedUrl && savedKey) {
+      $('supabaseUrl').value = savedUrl;
+      $('supabaseKey').value = savedKey;
+      connect();
+    }
+  </script>
+</body>
+</html>
