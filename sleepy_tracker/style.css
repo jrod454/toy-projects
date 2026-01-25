@@ -1,0 +1,338 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+  color: #fff;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.streamer-name {
+  color: #9146ff;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.status-card,
+.progress-card,
+.history-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #666;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.live .status-dot {
+  background: #ff4444;
+  box-shadow: 0 0 10px #ff4444;
+}
+
+.status-indicator.offline .status-dot {
+  background: #666;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.current-session {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-session p {
+  font-size: 1.1rem;
+}
+
+#session-duration {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  color: #4ade80;
+}
+
+.progress-card h2,
+.history-card h2 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.progress-bar {
+  height: 24px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9146ff, #ff6b9d);
+  border-radius: 12px;
+  transition: width 0.5s ease-out;
+  width: 0%;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill.live {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.progress-fill.live::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(145, 70, 255, 0.7), 0 0 20px rgba(255, 107, 157, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(145, 70, 255, 1), 0 0 50px rgba(255, 107, 157, 0.7), 0 0 70px rgba(145, 70, 255, 0.4);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 1.1rem;
+}
+
+#time-streamed {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+#goal-time {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.progress-percent {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  color: #9146ff;
+}
+
+#session-list {
+  list-style: none;
+}
+
+#session-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+}
+
+#session-list li:last-child {
+  border-bottom: none;
+}
+
+.session-date {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.session-duration {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Goal reached state */
+.progress-fill.complete {
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+}
+
+.progress-percent.complete {
+  color: #4ade80;
+}
+
+/* Calendar styles */
+.calendar-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.calendar-header h2 {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+.calendar-nav {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.calendar-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.5rem 0;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.4);
+  position: relative;
+}
+
+.calendar-day.current-month {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.calendar-day.today {
+  border: 2px solid #9146ff;
+}
+
+.calendar-day.goal-met {
+  background: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+
+.calendar-day.partial {
+  background: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.calendar-day.none {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Calendar legend */
+.calendar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.legend-dot.goal-met {
+  background: rgba(74, 222, 128, 0.5);
+}
+
+.legend-dot.partial {
+  background: rgba(251, 191, 36, 0.5);
+}
+
+.legend-dot.none {
+  background: rgba(255, 255, 255, 0.1);
+}

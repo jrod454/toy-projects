@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Stream Goal Tracker</h1>
+      <p class="streamer-name" id="streamer-name">Loading...</p>
+    </header>
+
+    <div class="status-card">
+      <div class="status-indicator" id="status-indicator">
+        <span class="status-dot"></span>
+        <span class="status-text" id="status-text">Checking...</span>
+      </div>
+      <div class="current-session" id="current-session" style="display: none;">
+        <p>Current session: <span id="session-duration">0:00:00</span></p>
+      </div>
+    </div>
+
+    <div class="progress-card">
+      <h2>Today's Progress</h2>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="time-streamed">0h 0m</span>
+        <span id="goal-time">/ 8h 0m</span>
+      </div>
+      <p class="progress-percent" id="progress-percent">0%</p>
+    </div>
+
+    <div class="history-card">
+      <h2>Recent Sessions</h2>
+      <ul id="session-list">
+        <li>Loading...</li>
+      </ul>
+    </div>
+
+    <div class="calendar-card">
+      <div class="calendar-header">
+        <button id="prev-month" class="calendar-nav">&lt;</button>
+        <h2 id="calendar-month">January 2025</h2>
+        <button id="next-month" class="calendar-nav">&gt;</button>
+      </div>
+      <div class="calendar-grid">
+        <div class="calendar-day-header">Sun</div>
+        <div class="calendar-day-header">Mon</div>
+        <div class="calendar-day-header">Tue</div>
+        <div class="calendar-day-header">Wed</div>
+        <div class="calendar-day-header">Thu</div>
+        <div class="calendar-day-header">Fri</div>
+        <div class="calendar-day-header">Sat</div>
+      </div>
+      <div class="calendar-days" id="calendar-days"></div>
+      <div class="calendar-legend">
+        <span class="legend-item"><span class="legend-dot goal-met"></span> Goal met</span>
+        <span class="legend-item"><span class="legend-dot partial"></span> Streamed</span>
+        <span class="legend-item"><span class="legend-dot none"></span> No stream</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
