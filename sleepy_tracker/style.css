@@ -20,6 +20,16 @@ body {
 header {
   text-align: center;
   margin-bottom: 2rem;
+  animation: header-glow 4s ease-in-out infinite;
+}
+
+@keyframes header-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px rgba(145, 70, 255, 0.5), 0 0 20px rgba(145, 70, 255, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(145, 70, 255, 0.8), 0 0 40px rgba(255, 107, 157, 0.5), 0 0 60px rgba(145, 70, 255, 0.3);
+  }
 }
 
 header h1 {
@@ -41,6 +51,17 @@ header h1 {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   backdrop-filter: blur(10px);
+  animation: card-glow 3s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(145, 70, 255, 0.3), 0 0 30px rgba(145, 70, 255, 0.1);
+}
+
+@keyframes card-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(145, 70, 255, 0.3), 0 0 30px rgba(145, 70, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(145, 70, 255, 0.5), 0 0 50px rgba(255, 107, 157, 0.3), 0 0 70px rgba(145, 70, 255, 0.2);
+  }
 }
 
 .status-indicator {
@@ -216,6 +237,9 @@ header h1 {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   backdrop-filter: blur(10px);
+  animation: card-glow 3s ease-in-out infinite;
+  animation-delay: 0.5s;
+  box-shadow: 0 0 15px rgba(145, 70, 255, 0.3), 0 0 30px rgba(145, 70, 255, 0.1);
 }
 
 .calendar-header {
@@ -335,4 +359,75 @@ header h1 {
 
 .legend-dot.none {
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* Fireworks canvas */
+#fireworks-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Enhanced glow when goal is met */
+.goal-met-celebration .status-card,
+.goal-met-celebration .progress-card,
+.goal-met-celebration .history-card,
+.goal-met-celebration .calendar-card {
+  animation: celebration-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes celebration-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.5), 0 0 40px rgba(74, 222, 128, 0.3), 0 0 60px rgba(74, 222, 128, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(74, 222, 128, 0.7), 0 0 60px rgba(74, 222, 128, 0.5), 0 0 90px rgba(255, 215, 0, 0.3);
+  }
+}
+
+/* Progress bar glow */
+.progress-bar {
+  animation: progress-bar-glow 3s ease-in-out infinite;
+  animation-delay: 0.25s;
+}
+
+@keyframes progress-bar-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(145, 70, 255, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(145, 70, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Calendar day glow */
+.calendar-day.goal-met {
+  animation: day-glow 2s ease-in-out infinite;
+}
+
+@keyframes day-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(74, 222, 128, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.6), 0 0 20px rgba(74, 222, 128, 0.2);
+  }
+}
+
+/* Status dot enhanced glow */
+.status-indicator.live .status-dot {
+  animation: live-dot-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes live-dot-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px #ff4444, 0 0 20px rgba(255, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px #ff4444, 0 0 40px rgba(255, 68, 68, 0.7), 0 0 60px rgba(255, 68, 68, 0.3);
+  }
 }

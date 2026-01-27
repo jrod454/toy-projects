@@ -12,6 +12,8 @@ let liveStartTime = null;
 let updateInterval = null;
 let calendarDate = new Date();
 let monthlyData = {};
+let goalMetCelebrated = false;
+let fireworksActive = false;
 
 // Initialize Supabase client
 const supabaseUrl = CONFIG.SUPABASE_URL;
@@ -90,9 +92,13 @@ function updateProgressDisplay(completedMinutes, liveMinutes, goalMinutes) {
   if (percent >= 100) {
     progressFill.classList.add("complete");
     document.getElementById("progress-percent").classList.add("complete");
+    // Trigger fireworks celebration!
+    triggerGoalCelebration();
   } else {
     progressFill.classList.remove("complete");
     document.getElementById("progress-percent").classList.remove("complete");
+    goalMetCelebrated = false;
+    document.body.classList.remove('goal-met-celebration');
   }
 }
 
@@ -298,6 +304,10 @@ async function init() {
   setupCalendarNavigation();
   await updateCalendar();
 
+  // Start continuous fireworks in background
+  fireworksDisplay = new FireworksDisplay();
+  fireworksDisplay.start();
+
   // Update live timer every second
   setInterval(updateLiveTimer, 1000);
 
@@ -307,6 +317,159 @@ async function init() {
     await fetchRecentSessions();
     await updateCalendar();
   }, CONFIG.POLL_INTERVAL);
+}
+
+// Fireworks system
+class Firework {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
+    this.x = Math.random() * canvas.width;
+    this.y = canvas.height;
+    this.targetY = Math.random() * canvas.height * 0.5;
+    this.speed = 3 + Math.random() * 3;
+    this.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.3;
+    this.vx = Math.cos(this.angle) * this.speed;
+    this.vy = Math.sin(this.angle) * this.speed;
+    this.trail = [];
+    this.exploded = false;
+    this.particles = [];
+    this.hue = Math.random() * 360;
+  }
+
+  update() {
+    if (!this.exploded) {
+      this.trail.push({ x: this.x, y: this.y, alpha: 1 });
+      if (this.trail.length > 10) this.trail.shift();
+
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += 0.05;
+
+      if (this.vy >= 0 || this.y <= this.targetY) {
+        this.explode();
+      }
+    } else {
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.alpha -= 0.015;
+        p.size *= 0.98;
+        if (p.alpha <= 0) this.particles.splice(i, 1);
+      }
+    }
+  }
+
+  explode() {
+    this.exploded = true;
+    const particleCount = 30 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 * i) / particleCount;
+      const speed = 1 + Math.random() * 3;
+      this.particles.push({
+        x: this.x,
+        y: this.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        size: 2 + Math.random() * 2,
+        hue: this.hue + Math.random() * 30 - 15
+      });
+    }
+  }
+
+  draw() {
+    if (!this.exploded) {
+      // Draw trail
+      for (let i = 0; i < this.trail.length; i++) {
+        const t = this.trail[i];
+        this.ctx.beginPath();
+        this.ctx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+        this.ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${i / this.trail.length * 0.5})`;
+        this.ctx.fill();
+      }
+      // Draw head
+      this.ctx.beginPath();
+      this.ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+      this.ctx.fillStyle = `hsl(${this.hue}, 100%, 70%)`;
+      this.ctx.fill();
+    } else {
+      // Draw particles
+      for (const p of this.particles) {
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        this.ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.alpha})`;
+        this.ctx.fill();
+      }
+    }
+  }
+
+  isDead() {
+    return this.exploded && this.particles.length === 0;
+  }
+}
+
+class FireworksDisplay {
+  constructor() {
+    this.canvas = document.getElementById('fireworks-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.fireworks = [];
+    this.animationId = null;
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+  }
+
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  }
+
+  start() {
+    if (fireworksActive) return;
+    fireworksActive = true;
+
+    // Continuously launch fireworks
+    this.launchInterval = setInterval(() => {
+      if (this.fireworks.length < 5) {
+        this.fireworks.push(new Firework(this.canvas, this.ctx));
+      }
+    }, 800);
+
+    this.animate();
+  }
+
+  stop() {
+    if (this.launchInterval) {
+      clearInterval(this.launchInterval);
+    }
+    fireworksActive = false;
+  }
+
+  animate() {
+    // Clear canvas completely each frame (transparent background)
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    for (let i = this.fireworks.length - 1; i >= 0; i--) {
+      this.fireworks[i].update();
+      this.fireworks[i].draw();
+      if (this.fireworks[i].isDead()) {
+        this.fireworks.splice(i, 1);
+      }
+    }
+
+    // Always keep animating
+    this.animationId = requestAnimationFrame(() => this.animate());
+  }
+}
+
+let fireworksDisplay = null;
+
+function triggerGoalCelebration() {
+  if (goalMetCelebrated) return;
+  goalMetCelebrated = true;
+  document.body.classList.add('goal-met-celebration');
 }
 
 // Start the app
