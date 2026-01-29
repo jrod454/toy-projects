@@ -99,6 +99,9 @@ function updateProgressDisplay(completedMinutes, liveMinutes, goalMinutes) {
     document.getElementById("progress-percent").classList.remove("complete");
     goalMetCelebrated = false;
     document.body.classList.remove('goal-met-celebration');
+    if (fireworksDisplay) {
+      fireworksDisplay.stop();
+    }
   }
 }
 
@@ -304,9 +307,8 @@ async function init() {
   setupCalendarNavigation();
   await updateCalendar();
 
-  // Start continuous fireworks in background
+  // Initialize fireworks display (but don't start until goal is met)
   fireworksDisplay = new FireworksDisplay();
-  fireworksDisplay.start();
 
   // Update live timer every second
   setInterval(updateLiveTimer, 1000);
@@ -470,6 +472,7 @@ function triggerGoalCelebration() {
   if (goalMetCelebrated) return;
   goalMetCelebrated = true;
   document.body.classList.add('goal-met-celebration');
+  fireworksDisplay.start();
 }
 
 // Start the app
