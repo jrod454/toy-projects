@@ -224,6 +224,53 @@
       border-color: var(--accent);
     }
 
+    .slider-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 200px;
+    }
+
+    .slider-wrapper label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .slider-wrapper input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .slider-wrapper input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+      background: #5558e3;
+    }
+
+    .slider-wrapper input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -415,12 +462,18 @@
         <div class="select-wrapper">
           <select id="routeSelect"><option value="all">All Routes</option></select>
         </div>
+        <div class="slider-wrapper">
+          <label for="timeRange">Time Range: <span id="timeRangeLabel">7 days</span></label>
+          <input type="range" id="timeRange" min="1" max="91" value="7">
+        </div>
         <div class="select-wrapper">
-          <select id="timeRange">
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d" selected>Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="all">All Time</option>
+          <select id="dataPoints">
+            <option value="50">50 Table Rows</option>
+            <option value="100">100 Table Rows</option>
+            <option value="250" selected>250 Table Rows</option>
+            <option value="500">500 Table Rows</option>
+            <option value="1000">1000 Table Rows</option>
+            <option value="all">All Table Rows</option>
           </select>
         </div>
         <button class="btn btn-secondary" id="refreshBtn">↻ Refresh</button>
@@ -478,6 +531,10 @@
   </main>
 
   <script>
+    // Supabase Configuration - Edit these values
+    const SUPABASE_URL = "https://mexlmceneuhczeehewzn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1leGxtY2VuZXVoY3plZWhld3puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0NzA2MDUsImV4cCI6MjA1NzA0NjYwNX0.G--J-ZN7hqKTrQ8r2YfcWn3__o4r8tTj4JI0PZow6e4";
+
     // State
     let config = { url: '', key: '' };
     let routes = [];
@@ -570,16 +627,26 @@
       } catch (e) { console.error(e); }
     }
 
+    function getTimeRangeDays() {
+      const val = parseInt($('timeRange').value);
+      return val >= 91 ? null : val; // 91 = "All Time"
+    }
+
+    function updateTimeRangeLabel() {
+      const days = getTimeRangeDays();
+      $('timeRangeLabel').textContent = days === null ? 'All Time' : days === 1 ? '1 day' : days + ' days';
+    }
+
     async function loadTravelTimes() {
       try {
-        const range = $('timeRange').value;
+        const days = getTimeRangeDays();
         const now = Date.now();
         let start = null;
-        if (range === '24h') start = new Date(now - 86400000);
-        else if (range === '7d') start = new Date(now - 604800000);
-        else if (range === '30d') start = new Date(now - 2592000000);
+        if (days !== null) {
+          start = new Date(now - days * 86400000);
+        }
 
-        const params = { select: '*', order: 'checked_at.asc' };
+        const params = { select: '*', order: 'checked_at.asc', limit: 100000 };
         if (start) params.checked_at = 'gte.' + start.toISOString();
 
         const data = await query('travel_times', params);
@@ -589,10 +656,29 @@
 
     function updateDashboard() {
       const sel = $('routeSelect').value;
+      const pointsLimit = $('dataPoints').value;
       const data = sel === 'all' ? travelTimes : travelTimes.filter(t => t.route_id === sel);
+
+      // Apply data points limit only for the table (chart shows all data for the time range)
+      let tableData = data;
+      if (pointsLimit !== 'all' && data.length > parseInt(pointsLimit)) {
+        tableData = data.slice(-parseInt(pointsLimit));
+      }
+
+      // Debug logging
+      console.log('=== Dashboard Update ===');
+      console.log('Total fetched from DB:', travelTimes.length);
+      console.log('After route filter:', data.length);
+      console.log('Points limit setting:', pointsLimit);
+      console.log('Table data (limited):', tableData.length);
+      console.log('Chart data (unlimited):', data.length);
+      if (data.length > 0) {
+        console.log('Data date range:', new Date(data[0].checked_at).toLocaleString(), 'to', new Date(data[data.length-1].checked_at).toLocaleString());
+      }
+
       updateStats(data);
       updateChart(data);
-      updateTable(data);
+      updateTable(tableData);
     }
 
     function updateStats(data) {
@@ -612,6 +698,17 @@
 
     function updateChart(data) {
       if (chart) chart.destroy();
+
+      // Calculate time range bounds for x-axis
+      const days = getTimeRangeDays();
+      const now = Date.now();
+      let minTime = null;
+      if (days !== null) {
+        minTime = new Date(now - days * 86400000);
+      } else if (data.length) {
+        minTime = new Date(data[0].checked_at);
+      }
+      const maxTime = new Date(now);
 
       const byRoute = {};
       data.forEach(d => {
@@ -659,6 +756,8 @@
           scales: {
             x: {
               type: 'time',
+              min: minTime,
+              max: maxTime,
               time: { displayFormats: { hour: 'MMM d, HH:mm', day: 'MMM d' } },
               grid: { color: '#2a2a3a' },
               ticks: { color: '#5a5a70' }
@@ -692,7 +791,7 @@
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No data available</td></tr>';
         return;
       }
-      const recent = data.slice().reverse().slice(0, 50);
+      const recent = data.slice().reverse();
       tbody.innerHTML = recent.map(d => {
         const time = new Date(d.checked_at).toLocaleString();
         const dur = Math.round(d.duration_seconds / 60);
@@ -710,7 +809,9 @@
     $('disconnectBtn').onclick = disconnect;
     $('refreshBtn').onclick = async () => { await loadTravelTimes(); updateDashboard(); };
     $('routeSelect').onchange = updateDashboard;
-    $('timeRange').onchange = async () => { await loadTravelTimes(); updateDashboard(); };
+    $('timeRange').oninput = () => { updateTimeRangeLabel(); };
+    $('timeRange').onchange = async () => { updateTimeRangeLabel(); await loadTravelTimes(); updateDashboard(); };
+    $('dataPoints').onchange = updateDashboard;
     $('routeLegend').onclick = e => {
       const item = e.target.closest('.legend-item');
       if (item) toggleDataset(parseInt(item.dataset.i));
@@ -719,9 +820,17 @@
     // Auto-connect on load
     const savedUrl = localStorage.getItem('supabaseUrl');
     const savedKey = localStorage.getItem('supabaseKey');
-    if (savedUrl && savedKey) {
-      $('supabaseUrl').value = savedUrl;
-      $('supabaseKey').value = savedKey;
+
+    // Use pre-configured values if set, otherwise check localStorage
+    const useUrl = (SUPABASE_URL && !SUPABASE_URL.includes('your-project')) ? SUPABASE_URL : savedUrl;
+    const useKey = (SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('your-anon-key')) ? SUPABASE_ANON_KEY : savedKey;
+
+    // Initialize time range label
+    updateTimeRangeLabel();
+
+    if (useUrl && useKey) {
+      $('supabaseUrl').value = useUrl;
+      $('supabaseKey').value = useKey;
       connect();
     }
   </script>
