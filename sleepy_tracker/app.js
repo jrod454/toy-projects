@@ -122,10 +122,19 @@ function updateLiveTimer() {
   }
 }
 
+function getLocalDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 async function fetchStatus() {
   try {
     const status = await callRpc("sleepy_tracker_get_stream_status", {
       p_streamer_name: CONFIG.STREAMER_NAME,
+      p_local_date: getLocalDateString(),
     });
 
     currentStatus = status;
@@ -258,6 +267,8 @@ function renderCalendar() {
       dayEl.classList.add("goal-met");
     } else if (minutes > 0) {
       dayEl.classList.add("partial");
+      const percent = Math.min(100, (minutes / goalMinutes) * 100);
+      dayEl.style.setProperty("--fill-percent", `${percent}%`);
     } else {
       dayEl.classList.add("none");
     }
