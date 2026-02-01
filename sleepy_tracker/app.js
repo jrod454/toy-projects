@@ -170,7 +170,7 @@ async function fetchStatus() {
 async function fetchRecentSessions() {
   try {
     const sessions = await supabaseQuery(
-      `sleepy_tracker_stream_sessions?streamer_name=eq.${CONFIG.STREAMER_NAME}&ended_at=not.is.null&order=started_at.desc&limit=5`
+      `sleepy_tracker_stream_sessions?streamer_name=eq.${CONFIG.STREAMER_NAME}&ended_at=not.is.null&order=started_at.desc&limit=20`
     );
 
     const sessionList = document.getElementById("session-list");

@@ -197,6 +197,33 @@ header h1 {
 
 #session-list {
   list-style: none;
+  max-height: 16.875rem;
+  overflow-y: auto;
+  padding-right: 0.75rem;
+  scrollbar-width: auto;
+  scrollbar-color: rgba(145, 70, 255, 0.5) transparent;
+}
+
+#session-list::-webkit-scrollbar {
+  width: 1.25rem;
+}
+
+#session-list::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0.25rem 0;
+}
+
+#session-list::-webkit-scrollbar-thumb {
+  background: rgba(145, 70, 255, 0.5);
+  border-radius: 0.625rem;
+  border: 0.125rem solid transparent;
+  background-clip: content-box;
+}
+
+#session-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(145, 70, 255, 0.7);
+  border: 0.125rem solid transparent;
+  background-clip: content-box;
 }
 
 #session-list li {
