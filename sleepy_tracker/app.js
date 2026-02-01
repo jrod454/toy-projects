@@ -196,19 +196,30 @@ async function fetchRecentSessions() {
 }
 
 // Calendar functions
+function toLocalDateString(isoString) {
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 async function fetchMonthlyData(year, month) {
-  const startDate = new Date(year, month, 1).toISOString().split("T")[0];
-  const endDate = new Date(year, month + 1, 0).toISOString().split("T")[0];
+  // Expand query range by 1 day on each end to catch sessions that cross timezone boundaries
+  const queryStart = new Date(year, month, 0); // Day before month starts
+  const queryEnd = new Date(year, month + 1, 1); // Day after month ends
+  const startDate = queryStart.toISOString().split("T")[0];
+  const endDate = queryEnd.toISOString().split("T")[0];
 
   try {
     const sessions = await supabaseQuery(
       `sleepy_tracker_stream_sessions?streamer_name=eq.${CONFIG.STREAMER_NAME}&started_at=gte.${startDate}&started_at=lte.${endDate}T23:59:59&order=started_at.asc`
     );
 
-    // Group sessions by date and sum durations
+    // Group sessions by LOCAL date and sum durations
     const dailyTotals = {};
     sessions.forEach((session) => {
-      const date = session.started_at.split("T")[0];
+      const date = toLocalDateString(session.started_at);
       if (!dailyTotals[date]) {
         dailyTotals[date] = 0;
       }
@@ -277,7 +288,7 @@ function renderCalendar() {
       dayEl.classList.add("today");
     }
 
-    dayEl.textContent = day;
+    dayEl.innerHTML = `<span class="day-number">${day}</span>`;
 
     // Add tooltip with duration
     if (minutes > 0) {

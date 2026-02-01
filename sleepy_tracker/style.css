@@ -316,15 +316,20 @@ header h1 {
   left: 0;
   width: 100%;
   height: var(--fill-percent);
-  background: linear-gradient(to top, rgba(251, 191, 36, 0.4), rgba(251, 191, 36, 0.2));
-  z-index: 0;
+  background: linear-gradient(to top, rgba(251, 191, 36, 0.5), rgba(251, 191, 36, 0.25));
+  z-index: 1;
   transition: height 0.3s ease;
+  border-radius: 0 0 6px 6px;
 }
 
 .calendar-day.partial {
   background: rgba(255, 255, 255, 0.05);
   color: #fbbf24;
-  z-index: 1;
+}
+
+.calendar-day .day-number {
+  position: relative;
+  z-index: 2;
 }
 
 .calendar-day.goal-met {
