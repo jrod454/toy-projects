@@ -122,19 +122,25 @@ function updateLiveTimer() {
   }
 }
 
-function getLocalDateString() {
+function getLocalDayRange() {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  // Start of today in local time
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Start of tomorrow in local time
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return {
+    start: startOfDay.toISOString(),
+    end: endOfDay.toISOString(),
+  };
 }
 
 async function fetchStatus() {
   try {
+    const dayRange = getLocalDayRange();
     const status = await callRpc("sleepy_tracker_get_stream_status", {
       p_streamer_name: CONFIG.STREAMER_NAME,
-      p_local_date: getLocalDateString(),
+      p_day_start: dayRange.start,
+      p_day_end: dayRange.end,
     });
 
     currentStatus = status;
@@ -217,14 +223,36 @@ async function fetchMonthlyData(year, month) {
     );
 
     // Group sessions by LOCAL date and sum durations
+    // Sessions spanning midnight are split across days
     const dailyTotals = {};
     sessions.forEach((session) => {
-      const date = toLocalDateString(session.started_at);
-      if (!dailyTotals[date]) {
-        dailyTotals[date] = 0;
-      }
-      if (session.duration_minutes) {
-        dailyTotals[date] += session.duration_minutes;
+      if (!session.ended_at || !session.duration_minutes) return;
+
+      const startTime = new Date(session.started_at);
+      const endTime = new Date(session.ended_at);
+
+      // Iterate through each day the session spans
+      let currentDayStart = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate());
+
+      while (currentDayStart < endTime) {
+        const currentDayEnd = new Date(currentDayStart);
+        currentDayEnd.setDate(currentDayEnd.getDate() + 1);
+
+        // Calculate overlap between session and this day
+        const overlapStart = Math.max(startTime.getTime(), currentDayStart.getTime());
+        const overlapEnd = Math.min(endTime.getTime(), currentDayEnd.getTime());
+        const overlapMinutes = (overlapEnd - overlapStart) / 60000;
+
+        if (overlapMinutes > 0) {
+          const dateStr = toLocalDateString(currentDayStart.toISOString());
+          if (!dailyTotals[dateStr]) {
+            dailyTotals[dateStr] = 0;
+          }
+          dailyTotals[dateStr] += overlapMinutes;
+        }
+
+        // Move to next day
+        currentDayStart = currentDayEnd;
       }
     });
 
