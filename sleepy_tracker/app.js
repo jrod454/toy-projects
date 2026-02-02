@@ -349,6 +349,9 @@ function setupCalendarNavigation() {
 async function init() {
   document.getElementById("streamer-name").textContent = CONFIG.STREAMER_NAME;
 
+  // Initialize fireworks display first (before fetchStatus, in case goal is already met)
+  fireworksDisplay = new FireworksDisplay();
+
   // Initial fetch
   await fetchStatus();
   await fetchRecentSessions();
@@ -356,9 +359,6 @@ async function init() {
   // Initialize calendar
   setupCalendarNavigation();
   await updateCalendar();
-
-  // Initialize fireworks display (but don't start until goal is met)
-  fireworksDisplay = new FireworksDisplay();
 
   // Update live timer every second
   setInterval(updateLiveTimer, 1000);
